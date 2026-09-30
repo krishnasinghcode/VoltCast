@@ -1,0 +1,25 @@
+# Secrets — never commit real values, .env.example is the tracked template
+.env
+
+# Large data backups — kept outside git, see backups/ folder
+backups/
+*.dump
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Node / frontend build output
+node_modules/
+dist/
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

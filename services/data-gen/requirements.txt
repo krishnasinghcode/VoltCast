@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+confluent-kafka
+psycopg2-binary
+sqlalchemy
+pydantic
+numpy
+python-dotenv
+pytest

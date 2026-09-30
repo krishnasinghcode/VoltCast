@@ -1,0 +1,14 @@
+fastapi==0.115.0
+uvicorn[standard]==0.32.0
+sqlalchemy==2.0.36
+psycopg2-binary==2.9.10
+redis==5.0.8
+python-jose[cryptography]==3.3.0
+passlib[bcrypt]==1.7.4
+# passlib 1.7.4 is incompatible with bcrypt>=4.1 (its backend self-test breaks), so pin the last good release.
+bcrypt==4.0.1
+httpx==0.27.2
+websockets==13.1
+# test-only, but kept here because CI installs only requirements.txt + pytest
+fakeredis==2.25.1
+pytest==8.3.3

@@ -1,0 +1,9 @@
+fastapi
+uvicorn[standard]
+confluent-kafka
+pymongo
+redis
+psycopg2-binary
+sqlalchemy
+pydantic
+pybloom-live

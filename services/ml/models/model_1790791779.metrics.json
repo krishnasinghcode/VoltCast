@@ -1,0 +1,13 @@
+{
+  "mae_model": 0.01653326339219345,
+  "mae_baseline": 0.032570052094932106,
+  "rmse_model": 0.025172981312576864,
+  "rmse_baseline": 0.054239694586597983,
+  "train_rows": 2880,
+  "test_rows": 720,
+  "trained_at": "2026-09-30T18:09:39.366435+00:00",
+  "model_version": "1790791779",
+  "contract_version": "1.0.0",
+  "horizon_days": 30,
+  "beats_baseline": true
+}
