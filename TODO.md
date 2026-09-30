@@ -10,12 +10,12 @@
       add a composite/partial index, run it again, keep both query plans as the before/after evidence.
 
 ## Documentation
-- [ ] Architecture diagram + ER diagram
-- [ ] 3-5 ADRs (content already exists in `docs/INTEGRATION.md` §5, needs formatting)
-- [ ] STRIDE threat model write-up (sketched in `docs/INTEGRATION.md` §6)
-- [ ] Declarations section (AI tools used, open-source licenses/SBOM, confirm synthetic-data-only)
-- [ ] README polish (one-command run, env vars, test commands, known issues)
-- [ ] The Solution Document itself (17 sections, using the provided template)
+- [x] Architecture diagram + ER diagram — `docs/diagrams/architecture.png`, `docs/diagrams/er_diagram.png`
+- [x] 3-5 ADRs — `docs/ADRs.md` (6 written)
+- [x] STRIDE threat model write-up — `docs/STRIDE_threat_model.md`
+- [x] Declarations section — `docs/DECLARATIONS.md`
+- [x] README — `README.md`
+- [ ] The Solution Document itself (17 sections, using the provided template) — next up
 
 ## Submission mechanics
 - [ ] Demo video (≤5 min)
