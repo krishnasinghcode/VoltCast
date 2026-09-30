@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><style>
+body { margin:0; background:#0b1220; font-family: -apple-system, Segoe UI, Arial, sans-serif; }
+</style></head>
+<body>
+<svg viewBox="0 0 1300 900" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">
+  <defs>
+    <marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#8aa0c8"/>
+    </marker>
+  </defs>
+  <rect width="1300" height="900" fill="#0b1220"/>
+  <text x="650" y="36" text-anchor="middle" fill="#e8edf7" font-size="24" font-weight="600">PostgreSQL Relational Core — ER Diagram (3NF)</text>
+
+  <!-- helper macro via repeated rects -->
+  <!-- fleets -->
+  <g>
+    <rect x="40" y="80" width="190" height="90" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="135" y="100" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">fleets</text>
+    <text x="55" y="120" fill="#a9bde0" font-size="11">fleet_id PK</text>
+    <text x="55" y="136" fill="#cfe" font-size="11">name, region</text>
+    <text x="55" y="152" fill="#cfe" font-size="11">created_at</text>
+  </g>
+
+  <!-- vehicle_models -->
+  <g>
+    <rect x="40" y="200" width="190" height="90" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="135" y="220" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">vehicle_models</text>
+    <text x="55" y="240" fill="#a9bde0" font-size="11">model_id PK</text>
+    <text x="55" y="256" fill="#cfe" font-size="11">manufacturer, model_name</text>
+    <text x="55" y="272" fill="#cfe" font-size="11">model_year</text>
+  </g>
+
+  <!-- battery_chemistries -->
+  <g>
+    <rect x="40" y="320" width="190" height="90" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="135" y="340" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">battery_chemistries</text>
+    <text x="55" y="360" fill="#a9bde0" font-size="11">chemistry_id PK</text>
+    <text x="55" y="376" fill="#cfe" font-size="11">name, calendar_factor</text>
+    <text x="55" y="392" fill="#cfe" font-size="11">cycle_factor</text>
+  </g>
+
+  <!-- batteries -->
+  <g>
+    <rect x="300" y="320" width="200" height="100" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="400" y="340" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">batteries</text>
+    <text x="315" y="360" fill="#a9bde0" font-size="11">battery_id PK</text>
+    <text x="315" y="376" fill="#cfe" font-size="11">chemistry_id FK</text>
+    <text x="315" y="392" fill="#cfe" font-size="11">nominal_capacity_kwh</text>
+    <text x="315" y="408" fill="#cfe" font-size="11">rated_voltage_v, install_date</text>
+  </g>
+
+  <!-- vehicles (central) -->
+  <g>
+    <rect x="300" y="80" width="210" height="150" rx="8" fill="#1b2b4a" stroke="#6d8fd8" stroke-width="3"/>
+    <text x="405" y="102" text-anchor="middle" fill="#fff" font-size="15" font-weight="700">vehicles</text>
+    <text x="315" y="124" fill="#cfe0ff" font-size="11">vehicle_id PK (e.g. EV-000000001)</text>
+    <text x="315" y="140" fill="#a9bde0" font-size="11">fleet_id FK, model_id FK</text>
+    <text x="315" y="156" fill="#a9bde0" font-size="11">battery_id FK</text>
+    <text x="315" y="172" fill="#cfe" font-size="11">archetype (HEALTHY/NORMAL/</text>
+    <text x="315" y="188" fill="#cfe" font-size="11">STRESSED/BAD)</text>
+    <text x="315" y="204" fill="#cfe" font-size="11">manufacture_date, odometer, status</text>
+  </g>
+
+  <!-- simulations -->
+  <g>
+    <rect x="600" y="80" width="200" height="90" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="700" y="100" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">simulations</text>
+    <text x="615" y="120" fill="#a9bde0" font-size="11">simulation_id PK</text>
+    <text x="615" y="136" fill="#cfe" font-size="11">seed, mode, start_time</text>
+    <text x="615" y="152" fill="#cfe" font-size="11">duration_days, status</text>
+  </g>
+
+  <!-- simulation_vehicle_state -->
+  <g>
+    <rect x="870" y="80" width="230" height="110" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="985" y="100" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">simulation_vehicle_state</text>
+    <text x="885" y="120" fill="#a9bde0" font-size="11">(simulation_id, vehicle_id) PK</text>
+    <text x="885" y="136" fill="#cfe" font-size="11">soc_pct, soh_pct, odometer_km</text>
+    <text x="885" y="152" fill="#cfe" font-size="11">cycles, battery_temp_c</text>
+    <text x="885" y="168" fill="#cfe" font-size="11">current-state only, not history</text>
+  </g>
+
+  <!-- agg tables -->
+  <g>
+    <rect x="600" y="220" width="180" height="90" rx="8" fill="#1a3a2e" stroke="#4da87a" stroke-width="2"/>
+    <text x="690" y="240" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">agg_5min</text>
+    <text x="615" y="260" fill="#a9e0c0" font-size="11">(vehicle_id, window_start) PK</text>
+    <text x="615" y="276" fill="#cfe0da" font-size="11">avg/min/max soc, temp, current</text>
+    <text x="615" y="292" fill="#cfe0da" font-size="11">energy, distance, event_count</text>
+  </g>
+  <g>
+    <rect x="600" y="330" width="180" height="80" rx="8" fill="#1a3a2e" stroke="#4da87a" stroke-width="2"/>
+    <text x="690" y="350" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">agg_hourly</text>
+    <text x="615" y="370" fill="#a9e0c0" font-size="11">(vehicle_id, hour_start) PK</text>
+    <text x="615" y="386" fill="#cfe0da" font-size="11">energy, distance, charging_sessions</text>
+  </g>
+  <g>
+    <rect x="600" y="430" width="180" height="100" rx="8" fill="#1a3a2e" stroke="#4da87a" stroke-width="2"/>
+    <text x="690" y="450" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">agg_daily</text>
+    <text x="615" y="470" fill="#a9e0c0" font-size="11">(vehicle_id, date) PK</text>
+    <text x="615" y="486" fill="#cfe0da" font-size="11">fast_charge / deep_discharge</text>
+    <text x="615" y="502" fill="#cfe0da" font-size="11">high_temp_hours, soh_pct</text>
+    <text x="615" y="518" fill="#cfe0da" font-size="11">-- the ML feature/label source</text>
+  </g>
+
+  <!-- charging_sessions -->
+  <g>
+    <rect x="300" y="460" width="210" height="90" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="405" y="480" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">charging_sessions</text>
+    <text x="315" y="500" fill="#a9bde0" font-size="11">session_id PK, vehicle_id FK</text>
+    <text x="315" y="516" fill="#cfe" font-size="11">started_at, start/end_soc</text>
+    <text x="315" y="532" fill="#cfe" font-size="11">energy_delivered, charging_type</text>
+  </g>
+
+  <!-- battery_predictions -->
+  <g>
+    <rect x="870" y="220" width="230" height="110" rx="8" fill="#1b1b4a" stroke="#6d6dd8" stroke-width="2"/>
+    <text x="985" y="240" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">battery_predictions</text>
+    <text x="885" y="260" fill="#c9c9f0" font-size="11">prediction_id PK, vehicle_id FK</text>
+    <text x="885" y="276" fill="#cfe" font-size="11">predicted_degradation_30d_pct</text>
+    <text x="885" y="292" fill="#cfe" font-size="11">risk_level, model_version</text>
+    <text x="885" y="308" fill="#cfe" font-size="11">horizon_days, predicted_at</text>
+  </g>
+
+  <!-- alerts -->
+  <g>
+    <rect x="870" y="350" width="230" height="110" rx="8" fill="#3a1a2e" stroke="#a84d7a" stroke-width="2"/>
+    <text x="985" y="370" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">alerts</text>
+    <text x="885" y="390" fill="#e0a9c0" font-size="11">alert_id PK, vehicle_id FK</text>
+    <text x="885" y="406" fill="#cfe" font-size="11">alert_type, severity, status</text>
+    <text x="885" y="422" fill="#cfe" font-size="11">source (REALTIME_RULE/ML_PREDICTION)</text>
+    <text x="885" y="438" fill="#cfe" font-size="11">prediction_id FK (nullable)</text>
+  </g>
+
+  <!-- users -->
+  <g>
+    <rect x="40" y="620" width="200" height="90" rx="8" fill="#16233f" stroke="#4d6fa8" stroke-width="2"/>
+    <text x="140" y="640" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">users</text>
+    <text x="55" y="660" fill="#a9bde0" font-size="11">user_id PK</text>
+    <text x="55" y="676" fill="#cfe" font-size="11">email, password_hash</text>
+    <text x="55" y="692" fill="#cfe" font-size="11">role (ADMIN/FLEET_MANAGER/VIEWER)</text>
+    <text x="55" y="708" fill="#7f95c0" font-size="10">Not vehicle-related -- auth only</text>
+  </g>
+
+  <!-- relationship lines -->
+  <line x1="230" y1="125" x2="300" y2="140" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="230" y1="245" x2="300" y2="180" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="230" y1="360" x2="300" y2="365" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="400" y1="320" x2="400" y2="230" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="510" y1="125" x2="598" y2="120" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="510" y1="150" x2="868" y2="130" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="700" y1="170" x2="985" y2="200" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="405" y1="230" x2="600" y2="260" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="405" y1="230" x2="600" y2="370" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="405" y1="230" x2="600" y2="470" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="405" y1="230" x2="405" y2="458" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="405" y1="230" x2="870" y2="270" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="405" y1="230" x2="870" y2="400" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+  <line x1="985" y1="330" x2="985" y2="350" stroke="#8aa0c8" stroke-width="1.5" marker-end="url(#a)"/>
+
+  <text x="40" y="780" fill="#7f95c0" font-size="12">Every arrow is a FK reference into `vehicles` unless otherwise routed. Schema is normalized to 3NF: no</text>
+  <text x="40" y="798" fill="#7f95c0" font-size="12">repeating groups, every non-key attribute depends on the whole key. Deliberate denormalization: `agg_daily.soh_pct`</text>
+  <text x="40" y="816" fill="#7f95c0" font-size="12">duplicates the simulator's ground-truth SOH value for ML convenience, rather than requiring a join back to</text>
+  <text x="40" y="834" fill="#7f95c0" font-size="12">simulation_vehicle_state (which holds current state only, not history -- see docs/ADRs.md and mlMaster.md ss8).</text>
+</svg>
+</body></html>
