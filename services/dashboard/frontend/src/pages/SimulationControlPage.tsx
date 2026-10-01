@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { api, errorMessage } from "../api/client";
+import { ApiError, api, errorMessage } from "../api/client";
 import type { Page, SimulationRow, SimulationStatus } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
 import { Badge, Card, Empty, ErrorBanner, fmt, InfoTip, Spinner, StatCard } from "../components/ui";
@@ -59,6 +59,11 @@ export default function SimulationControlPage() {
     : null;
   const running = st?.status === "RUNNING";
   const paused = st?.status === "PAUSED";
+  // A 404 here means this simulation's live run state is gone from data-gen's in-memory registry
+  // (it only tracks runs created since it last started) -- not a real error, and not something the
+  // Start/Pause/Resume/Reset actions could recover from either, so they're hidden rather than left
+  // enabled to fail with their own 404 on click.
+  const deadRunner = status.error instanceof ApiError && status.error.status === 404;
 
   return (
     <div className="page">
@@ -84,7 +89,7 @@ export default function SimulationControlPage() {
                   </option>
                 ))}
               </select>
-              <ErrorBanner error={status.error} />
+              {!deadRunner && <ErrorBanner error={status.error} />}
               {st && (
                 <>
                   <div className="row gap wrap sim-status">
@@ -102,7 +107,7 @@ export default function SimulationControlPage() {
                   </div>
                 </>
               )}
-              {canWrite && (
+              {canWrite && !deadRunner && (
                 <div className="row gap wrap">
                   <button className="btn primary" disabled={!!busy || running || st?.status === "COMPLETED"} onClick={() => control(paused ? "resume" : "start")}>
                     {busy === "start" || busy === "resume" ? "…" : paused ? "Resume" : "Start"}
