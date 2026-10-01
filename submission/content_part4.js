@@ -53,7 +53,7 @@ const s12 = [
   bullet("No database replication/HA: each datastore is a single instance; availability NFR is only partially met (§7)."),
   bullet("build_or_load_fleet() cannot grow an existing persisted fleet to a larger vehicle_count without first truncating the fleet tables — a real limitation discovered and documented during integration (dataGenMaster.md)."),
   bullet("A Docker/WSL2-level quirk observed during the chaos demo: docker inspect's RestartCount field read 0 despite a confirmed real restart (container StartedAt timestamp and functional recovery both indicate a restart occurred) — noted honestly in the chaos demo report rather than silently presenting a clean but possibly-misleading number."),
-  bullet("EXPLAIN ANALYZE query-optimization evidence: a ready runbook exists but was not executed before this document was drafted (§5.3, §9) — to be completed and the real numbers inserted before final submission."),
+  bullet("EXPLAIN ANALYZE query-optimization evidence: scoped out of this submission as a Could-priority item given the time budget (§4); a complete runbook naming the candidate queries and index fixes already exists (test-evidence/EXPLAIN_ANALYZE_query_optimization.md)."),
   bullet("Ingest throughput does not meet the 100,000 events/sec target at this deployment's current scale (single broker, single consumer thread): measured ~1,897 events/sec against production of ~17,856 events/sec, with consumer lag growing rather than stabilizing during the test window. Reported as a real, measured finding (§7) with a stated, concrete path to closing it (horizontal consumer parallelism across the already-provisioned 12 Kafka partitions), not hidden or rounded up."),
   bullet("predict_all_vehicles() was found, during integration, to loop over every row in the vehicles table with no filtering — against a stale or oversized fleet (e.g. left over from a throughput test) with little or no matching aggregated history, this turned into a multi-minute scan that exceeded the API's proxy timeout and surfaced to the dashboard as a hang. Fixed by scoping the candidate set to vehicles that actually have aggregated history at or before the prediction date, and short-circuiting immediately when none exists."),
   H2("Future Enhancements (next three steps from prototype to pilot)"),
@@ -91,7 +91,7 @@ const s14 = [
       ["Structure: clear service folders, plus /docs, /infra and /tests", "Done — services/{data-gen,ingestion,ml,dashboard}, docs/, infra/{k6,postgres}, test-evidence/"],
       ["CI Pipeline: build, lint, all test suites and security scans on every push", "Partial — .github/workflows/ci.yml runs all four services' pytest suites plus a frontend build on every push; no lint step and no security scan (Semgrep/ZAP/Trivy) wired in (declared gap, §9)"],
       ["Hygiene: no secrets committed, .env.example provided, commits from all members", "Partial — .env is gitignored and .env.example is committed with placeholder values only; commit history currently reflects one contributor's account (team commit history to be added as other members contribute)"],
-      ["Final Tag: v1.0-submission", "PENDING — to be applied once the remaining evidence (§4, §7) is complete and the document is finalized"],
+      ["Final Tag: v1.0-submission", "PENDING — to be applied once the demo video (§13) and team/repo details are finalized"],
     ],
     [3700, 5650]
   ),
@@ -133,7 +133,7 @@ const s17 = [
   H2("Full technical documentation"),
   P("The complete, detailed specification this project was built from is kept in docs/: CONTRACT.md (the shared schema/contract all four services were built against), dataGenMaster.md, ingestionMaster.md, mlMaster.md, dashboardMaster.md (one detailed specification per service), INTEGRATION.md (build order, docker-compose.yml, cross-module integration notes), ADRs.md, STRIDE_threat_model.md, and DECLARATIONS.md. A reusable, project-agnostic write-up of the contract-first development methodology itself is kept at inital notes/ModularAIBuildMethodology.md."),
   H2("Full test logs and raw evidence"),
-  P("test-evidence/ contains: k6_load_test_results.md (full k6 summary), chaos_demo.ps1 (the reusable, automated chaos-test script) and its generated timestamped report, SHORT_BURST_100k_throughput_test.md (the runbook) and SHORT_BURST_100k_throughput_results_20261001.md (the real measured results), and EXPLAIN_ANALYZE_query_optimization.md (the runbook for the still-pending query-optimization evidence)."),
+  P("test-evidence/ contains: k6_load_test_results.md (full k6 summary), chaos_demo.ps1 (the reusable, automated chaos-test script) and its generated timestamped report, SHORT_BURST_100k_throughput_test.md (the runbook) and SHORT_BURST_100k_throughput_results_20261001.md (the real measured results), and EXPLAIN_ANALYZE_query_optimization.md (the runbook for the deferred query-optimization follow-up, F-17)."),
   P("TODO.md tracks every remaining item at the time of this document's drafting, for full transparency about what is and is not yet complete."),
 ];
 

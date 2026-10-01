@@ -22,11 +22,11 @@ const s4 = [
       ["F-14", "Automated test suites (90 tests across 4 services)", "Must", "Done", "services/*/tests/"],
       ["F-15", "k6-load-tested API (p95/p99 well under target)", "Should", "Done", "infra/k6/burst_load_test.js"],
       ["F-16", "100K-vehicle ingest throughput proof (SHORT_BURST)", "Should", "Done (real result below target)", "test-evidence/SHORT_BURST_100k_throughput_results_20261001.md"],
-      ["F-17", "Query optimization evidence (EXPLAIN ANALYZE before/after)", "Should", "Planned", "TBD"],
+      ["F-17", "Query optimization evidence (EXPLAIN ANALYZE before/after)", "Could", "Deferred", "test-evidence/EXPLAIN_ANALYZE_query_optimization.md (runbook)"],
     ],
     [900, 4200, 1000, 1200, 2050]
   ),
-  pending("F-16 and F-17 have ready-to-run procedures documented (TODO.md, test-evidence/) but have not yet been executed at submission-writing time — fill in the real measured numbers once run, per the runbooks already in the repository."),
+  note("F-17 is a Could-priority item scoped out for this submission given the time budget; a full before/after runbook is already written (test-evidence/EXPLAIN_ANALYZE_query_optimization.md) and ready to execute as a follow-up."),
   pageBreak(),
 ];
 
@@ -73,7 +73,7 @@ const s5 = [
   ),
   H3("Capacity and partitioning"),
   P("Kafka topic telemetry.raw: 12 partitions, keyed by vehicle_id, so one vehicle's events are always ordered on one partition while the fleet is spread evenly across partitions (avoiding hotspots). A dedicated 100,000-vehicle SHORT_BURST throughput test was run against this (test-evidence/SHORT_BURST_100k_throughput_results_20261001.md): measured production throughput ~17,856 events/sec, but measured ingestion (consumption) throughput only ~1,897 events/sec over the same interval, with consumer lag growing by over 1.1 million events during a 68-second measurement window — ingestion is not keeping up with production at this scale on this hardware. This is reported honestly as the real, measured ceiling rather than adjusted or omitted; see §7 and §12 for what this means and the stated path to closing the gap (horizontal consumer parallelism across the 12 already-provisioned partitions)."),
-  pending("the EXPLAIN ANALYZE before/after query-optimization evidence — a ready runbook exists (TODO.md, test-evidence/EXPLAIN_ANALYZE_query_optimization.md) but was not yet executed at the time this document was drafted."),
+  note("Query-level EXPLAIN ANALYZE optimization work (composite/partial indexes) is scoped as a Could-priority follow-up for this submission (§4) — a complete runbook already exists at test-evidence/EXPLAIN_ANALYZE_query_optimization.md, naming the exact candidate queries and the index fix for each."),
   H2("5.4 Deployment View"),
   P("Single Docker Compose stack, nine containers (kafka, postgres, mongo, redis, data-gen, ingestion, ml, api, frontend) on one Docker network, with named volumes for the three datastores so data survives container restarts. Every service reads all configuration from environment variables (CONTRACT.md §7) and contains no cloud-provider-specific SDK calls — meaning the same container images and compose definition (adapted to whichever container orchestrator a target cloud uses — ECS, GKE, AKS, or a self-managed Kubernetes cluster) would run unmodified. This project has not yet been deployed to an actual cloud environment (a declared scope decision given the available time — see §12); the cloud-agnostic property is a design property verified by code inspection (no SDK imports), not yet a live deployment."),
   pageBreak(),
