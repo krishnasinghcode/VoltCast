@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api, errorMessage } from "../api/client";
 import type { Alert, Page } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { Badge, Card, Empty, ErrorBanner, fmt, Pager, Spinner, useCursorPager } from "../components/ui";
+import { Badge, Card, Empty, ErrorBanner, fmt, InfoTip, Pager, Spinner, useCursorPager } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 
 export default function AlertsPage() {
@@ -89,7 +89,9 @@ export default function AlertsPage() {
         </div>
       </Card>
       {msg && <div className="banner error">{msg}</div>}
-      <Card>
+      <Card
+        title={<>Alerts <InfoTip text="'Rule' alerts fire instantly from live telemetry thresholds (e.g. high temperature). 'ML' alerts fire when a prediction crosses the HIGH risk threshold — only appear after a prediction run." /></>}
+      >
         <ErrorBanner error={alerts.error} onRetry={alerts.reload} />
         {alerts.loading && !alerts.data && <Spinner />}
         {alerts.data && alerts.data.items.length === 0 && <Empty>No alerts match these filters.</Empty>}

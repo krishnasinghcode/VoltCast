@@ -4,7 +4,7 @@ import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, X
 import { api, errorMessage } from "../api/client";
 import type { Alert, HistoryPage, Page, Prediction, VehicleDetail as Detail } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { Badge, Card, Empty, ErrorBanner, fmt, RiskBadge, Spinner, StatCard } from "../components/ui";
+import { Badge, Card, Empty, ErrorBanner, fmt, InfoTip, RiskBadge, Spinner, StatCard } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 import { useLiveVehicle } from "../hooks/useLiveSocket";
 
@@ -97,9 +97,12 @@ export default function VehicleDetail() {
             <Badge key={f} kind="warning">{f.replace(/_/g, " ")}</Badge>
           ))}
           {canWrite && (
-            <button className="btn" onClick={predictNow} disabled={predicting}>
-              {predicting ? "Predicting…" : "Predict now"}
-            </button>
+            <span className="row gap" style={{ alignItems: "center" }}>
+              <button className="btn" onClick={predictNow} disabled={predicting}>
+                {predicting ? "Predicting…" : "Predict now"}
+              </button>
+              <InfoTip text="Scores just this one vehicle against the current trained model. Fails with 'insufficient history' if this vehicle doesn't yet have at least ~7 days of aggregated telemetry — that's an expected result for a brand-new or very short simulation run, not a bug." />
+            </span>
           )}
         </div>
       </div>
@@ -120,6 +123,7 @@ export default function VehicleDetail() {
         <StatCard label="Odometer" value={`${fmt.int(cur.odometer_km)} km`} />
         <StatCard
           label="30-day outlook"
+          info="The ML model's predicted battery health 30 days from now, and the resulting risk level. Shows '—' until a prediction has been made for this vehicle (Risk & ML page, or the 'Predict now' button above)."
           value={pred ? fmt.pct(pred.predicted_soh_30d, 2) : "—"}
           sub={pred ? <RiskBadge level={pred.risk_level} /> : "not predicted yet"}
           tone={pred?.risk_level === "HIGH" ? "bad" : pred?.risk_level === "MEDIUM" ? "warn" : undefined}
@@ -130,7 +134,7 @@ export default function VehicleDetail() {
       </p>
 
       <Card
-        title="History"
+        title={<>History <InfoTip text="Aggregated telemetry at your chosen resolution. Empty until the ingestion pipeline has had enough time (and events) to produce rollups at that resolution for this vehicle — daily needs the most real activity, 5-min the least." /></>}
         actions={
           <div className="segmented">
             {(["daily", "hourly", "5min"] as Resolution[]).map((r) => (
@@ -219,7 +223,7 @@ export default function VehicleDetail() {
       </div>
 
       {detail.data.ground_truth && (
-        <Card title="Simulator ground truth">
+        <Card title={<>Simulator ground truth <InfoTip text="The simulator's own internal state for this vehicle, used to generate its telemetry — a reference point to sanity-check the aggregated/predicted numbers above against the 'true' value." /></>}>
           <div className="kv-grid">
             {Object.entries(detail.data.ground_truth).map(([k, val]) => (
               <div key={k}>

@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { api, errorMessage } from "../api/client";
 import type { Page, SimulationRow, SimulationStatus } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { Badge, Card, Empty, ErrorBanner, fmt, Spinner, StatCard } from "../components/ui";
+import { Badge, Card, Empty, ErrorBanner, fmt, InfoTip, Spinner, StatCard } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 
 type Mode = "LONGITUDINAL" | "SHORT_BURST" | "DEMO";
@@ -71,7 +71,7 @@ export default function SimulationControlPage() {
       {msg && <div className={`banner ${msg.kind}`}>{msg.text}</div>}
 
       <div className="grid-2">
-        <Card title="Current simulation">
+        <Card title={<>Current simulation <InfoTip text="RUNNING = actively ticking and producing telemetry. PAUSED = frozen in place, resumable. COMPLETED = finished its full configured duration. Reset discards this run's progress and starts it over from the same seed." /></>}>
           <ErrorBanner error={sims.error} onRetry={sims.reload} />
           {sims.loading && !sims.data && <Spinner />}
           {sims.data && sims.data.items.length === 0 && <Empty>No simulations yet — create one.</Empty>}
@@ -177,7 +177,7 @@ function CreateSimulation({ onCreated }: { onCreated: (id: string) => void }) {
   const num = (v: string) => (v === "" ? 0 : Number(v));
 
   return (
-    <Card title="Create simulation">
+    <Card title={<>Create simulation <InfoTip text="DEMO: small/fast, good for trying things out. LONGITUDINAL: builds real multi-week history for ML training (slow to build at 100,000 vehicles). SHORT_BURST: proves ingest throughput at full fleet scale, 1 real second per sim-second. Warning: a vehicle count larger than what's already in the database will fail — the fleet tables must be truncated first (see README's Troubleshooting section)." /></>}>
       <form onSubmit={submit} className="form-grid">
         <div className="segmented full">
           {(["DEMO", "LONGITUDINAL", "SHORT_BURST"] as Mode[]).map((m) => (
@@ -186,10 +186,10 @@ function CreateSimulation({ onCreated }: { onCreated: (id: string) => void }) {
             </button>
           ))}
         </div>
-        <label className="field"><span>Vehicles</span><input type="number" min={1} value={form.vehicle_count} onChange={(e) => setForm({ ...form, vehicle_count: num(e.target.value) })} /></label>
-        <label className="field"><span>Duration (days)</span><input type="number" min={1} value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: num(e.target.value) })} /></label>
-        <label className="field"><span>Speed (sim-sec per real-sec)</span><input type="number" min={0.1} step="any" value={form.simulation_speed} onChange={(e) => setForm({ ...form, simulation_speed: num(e.target.value) })} /></label>
-        <label className="field"><span>Seed</span><input type="number" value={form.seed} onChange={(e) => setForm({ ...form, seed: num(e.target.value) })} /></label>
+        <label className="field"><span>Vehicles <InfoTip text="If this number is larger than the fleet already in the database, creation will fail with a collision error — truncate the fleet tables first (README Troubleshooting)." /></span><input type="number" min={1} value={form.vehicle_count} onChange={(e) => setForm({ ...form, vehicle_count: num(e.target.value) })} /></label>
+        <label className="field"><span>Duration (days) <InfoTip text="How many simulated days this run advances through. Simulated time, not real time — see Speed." /></span><input type="number" min={1} value={form.duration_days} onChange={(e) => setForm({ ...form, duration_days: num(e.target.value) })} /></label>
+        <label className="field"><span>Speed (sim-sec per real-sec) <InfoTip text="How fast simulated time passes relative to real time. 1 = real-time (used by SHORT_BURST). 2880 = one simulated day every 30 real seconds (used by LONGITUDINAL)." /></span><input type="number" min={0.1} step="any" value={form.simulation_speed} onChange={(e) => setForm({ ...form, simulation_speed: num(e.target.value) })} /></label>
+        <label className="field"><span>Seed <InfoTip text="Same seed + same settings always produces the exact same fleet and telemetry — this is what makes runs reproducible." /></span><input type="number" value={form.seed} onChange={(e) => setForm({ ...form, seed: num(e.target.value) })} /></label>
         <label className="field full"><span>Simulated start (UTC)</span><input type="datetime-local" value={form.start_time} onChange={(e) => setForm({ ...form, start_time: e.target.value })} /></label>
         {mode === "SHORT_BURST" && (
           <>

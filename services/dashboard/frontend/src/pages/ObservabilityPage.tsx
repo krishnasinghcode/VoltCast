@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { api } from "../api/client";
 import type { Observability } from "../api/types";
-import { Badge, Card, ErrorBanner, fmt, Spinner, StatCard } from "../components/ui";
+import { Badge, Card, ErrorBanner, fmt, InfoTip, Spinner, StatCard } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 
 interface Point {
@@ -61,32 +61,38 @@ export default function ObservabilityPage() {
       {!d && obs.loading && <Spinner />}
       {d && (
         <>
-          <h3 className="section-title">Ingestion {!d.ingestion.reachable && <Badge kind="critical">unreachable</Badge>}</h3>
+          <h3 className="section-title">
+            Ingestion {!d.ingestion.reachable && <Badge kind="critical">unreachable</Badge>}
+            <InfoTip text="Live counters from the Kafka-consuming ingestion service. These are cumulative totals since that service last started, not per-second rates." />
+          </h3>
           <div className="stats-grid">
-            <StatCard label="Events consumed" value={fmt.int(d.ingestion.events_consumed_total)} sub={last?.eventsPerSec != null ? `${fmt.int(last.eventsPerSec)} ev/s` : "—"} />
-            <StatCard label="Deduplicated" value={fmt.int(d.ingestion.events_deduplicated_total)} sub="dropped as duplicates" />
-            <StatCard label="Rejected" value={fmt.int(d.ingestion.events_rejected_total)} sub="failed validation" tone={(d.ingestion.events_rejected_total ?? 0) > 0 ? "warn" : undefined} />
-            <StatCard label="Late events" value={fmt.int(d.ingestion.late_events_total)} sub="out of order" />
-            <StatCard label="Consumer lag" value={fmt.int(d.ingestion.consumer_lag)} sub="messages behind" tone={(d.ingestion.consumer_lag ?? 0) > 10000 ? "warn" : undefined} />
+            <StatCard label="Events consumed" info="Total telemetry events successfully processed since ingestion last started." value={fmt.int(d.ingestion.events_consumed_total)} sub={last?.eventsPerSec != null ? `${fmt.int(last.eventsPerSec)} ev/s` : "—"} />
+            <StatCard label="Deduplicated" info="Events dropped because they were already seen (Bloom filter + database unique-index backstop) — expected to be non-zero, not an error." value={fmt.int(d.ingestion.events_deduplicated_total)} sub="dropped as duplicates" />
+            <StatCard label="Rejected" info="Events that failed schema/range validation and were discarded rather than corrupting downstream data. A small nonzero number is expected (deliberately injected malformed test events)." value={fmt.int(d.ingestion.events_rejected_total)} sub="failed validation" tone={(d.ingestion.events_rejected_total ?? 0) > 0 ? "warn" : undefined} />
+            <StatCard label="Late events" info="Events that arrived out of order relative to already-processed ones, still handled correctly rather than crashing." value={fmt.int(d.ingestion.late_events_total)} sub="out of order" />
+            <StatCard label="Consumer lag" info="How many produced events are still waiting to be consumed. A high but shrinking number means it's catching up; a number that keeps growing means production is outpacing consumption." value={fmt.int(d.ingestion.consumer_lag)} sub="messages behind" tone={(d.ingestion.consumer_lag ?? 0) > 10000 ? "warn" : undefined} />
           </div>
 
-          <h3 className="section-title">API</h3>
+          <h3 className="section-title">
+            API
+            <InfoTip text="Request counters and latency for this dashboard's own backend API, tracked since it last started." />
+          </h3>
           <div className="stats-grid">
             <StatCard label="Requests" value={fmt.int(d.api.requests_total)} sub={`up ${fmt.duration(d.api.uptime_s)}`} />
-            <StatCard label="Errors (5xx)" value={fmt.int(d.api.errors_total)} sub={`${(d.api.error_rate * 100).toFixed(2)}% error rate`} tone={d.api.errors_total > 0 ? "warn" : "good"} />
+            <StatCard label="Errors (5xx)" info="Server-side errors (the API's own fault), not 4xx client errors like a bad request or missing auth." value={fmt.int(d.api.errors_total)} sub={`${(d.api.error_rate * 100).toFixed(2)}% error rate`} tone={d.api.errors_total > 0 ? "warn" : "good"} />
             <StatCard label="Avg latency" value={`${fmt.num(d.api.avg_latency_ms)} ms`} />
-            <StatCard label="p95 latency" value={`${fmt.num(d.api.p95_latency_ms)} ms`} sub={`p99 ${fmt.num(d.api.p99_latency_ms)} ms`} tone={d.api.p95_latency_ms > 200 ? "warn" : "good"} />
-            <StatCard label="Rate limited" value={fmt.int(d.api.rate_limited_total)} sub={`${fmt.int(d.api.client_errors_total)} total 4xx`} />
+            <StatCard label="p95 latency" info="95% of requests complete faster than this. A better single number than the average for judging real user experience, since it isn't skewed by a few very fast requests." value={`${fmt.num(d.api.p95_latency_ms)} ms`} sub={`p99 ${fmt.num(d.api.p99_latency_ms)} ms`} tone={d.api.p95_latency_ms > 200 ? "warn" : "good"} />
+            <StatCard label="Rate limited" info="Requests rejected with 429 because a user exceeded their per-endpoint request limit." value={fmt.int(d.api.rate_limited_total)} sub={`${fmt.int(d.api.client_errors_total)} total 4xx`} />
           </div>
 
           <div className="grid-2">
-            <Card title="Throughput & lag">
+            <Card title="Throughput & lag" info="Live rolling chart built client-side from repeated polls of /observability — events/sec is derived from the change in the cumulative counter above between polls.">
               <MiniChart data={series} lines={[
                 { key: "eventsPerSec", name: "events/s", color: "var(--accent)" },
                 { key: "lag", name: "consumer lag", color: "var(--risk-medium)" },
               ]} />
             </Card>
-            <Card title="API latency (ms)">
+            <Card title="API latency (ms)" info="Rolling average and p95 response time for this API, sampled every few seconds while this page is open.">
               <MiniChart data={series} lines={[
                 { key: "avg", name: "avg", color: "var(--accent)" },
                 { key: "p95", name: "p95", color: "var(--risk-high)" },
@@ -94,7 +100,7 @@ export default function ObservabilityPage() {
             </Card>
           </div>
 
-          <Card title="Services">
+          <Card title="Services" info="Health check result for each backend service this dashboard depends on, including whether its contract_version matches — a mismatch means two services were built from different versions of the shared schema and may disagree about data shapes.">
             <div className="table-wrap">
               <table>
                 <thead>

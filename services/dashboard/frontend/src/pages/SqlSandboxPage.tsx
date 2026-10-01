@@ -2,7 +2,7 @@ import { useState } from "react";
 import { api, errorMessage } from "../api/client";
 import type { SandboxResult } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { Card, ErrorBanner, Spinner } from "../components/ui";
+import { Card, ErrorBanner, InfoTip, Spinner } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 
 interface SandboxInfo {
@@ -46,7 +46,7 @@ export default function SqlSandboxPage() {
       </div>
       <ErrorBanner error={info.error} />
       <div className="sandbox-grid">
-        <Card title="Query">
+        <Card title={<>Query <InfoTip text="Main tables you can query: vehicles, fleets, batteries, agg_daily (per-vehicle-per-day history), charging_sessions, battery_predictions, alerts. Only SELECT/WITH allowed — anything else is rejected before it reaches the database." /></>}>
           <textarea
             className="sql-editor mono"
             value={query}

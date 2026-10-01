@@ -29,10 +29,13 @@ export const fmt = {
   },
 };
 
-export function StatCard(props: { label: string; value: ReactNode; sub?: ReactNode; tone?: "good" | "warn" | "bad" }) {
+export function StatCard(props: { label: string; info?: string; value: ReactNode; sub?: ReactNode; tone?: "good" | "warn" | "bad" }) {
   return (
     <div className={`card stat ${props.tone ? `tone-${props.tone}` : ""}`}>
-      <div className="stat-label">{props.label}</div>
+      <div className="stat-label">
+        {props.label}
+        {props.info && <InfoTip text={props.info} />}
+      </div>
       <div className="stat-value">{props.value}</div>
       {props.sub !== undefined && <div className="stat-sub">{props.sub}</div>}
     </div>
@@ -48,8 +51,26 @@ export function RiskBadge({ level }: { level: string | null | undefined }) {
   return <Badge kind={`risk-${level}`}>{level}</Badge>;
 }
 
-export function Card({ title, actions, children, className }: {
+/**
+ * Small "i" button that shows an explanation on hover/focus (and on tap for touch devices, since
+ * it's a real <button>, not just a hover-only span). Pure CSS tooltip -- no JS positioning library.
+ */
+export function InfoTip({ text }: { text: string }) {
+  return (
+    <span className="info-tip">
+      <button type="button" className="info-tip-btn" aria-label="What is this?">
+        i
+      </button>
+      <span className="info-tip-bubble" role="tooltip">
+        {text}
+      </span>
+    </span>
+  );
+}
+
+export function Card({ title, info, actions, children, className }: {
   title?: ReactNode;
+  info?: string;
   actions?: ReactNode;
   children: ReactNode;
   className?: string;
@@ -58,7 +79,12 @@ export function Card({ title, actions, children, className }: {
     <section className={`card ${className ?? ""}`}>
       {(title || actions) && (
         <header className="card-head">
-          {title && <h2>{title}</h2>}
+          {title && (
+            <h2>
+              {title}
+              {info && <InfoTip text={info} />}
+            </h2>
+          )}
           {actions && <div className="card-actions">{actions}</div>}
         </header>
       )}

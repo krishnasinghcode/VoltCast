@@ -160,7 +160,24 @@ def predict_all_vehicles(session, as_of_date=None) -> dict:
     # here for the same reason noted in label_construction.build_training_set: neither
     # `vehicles` nor `agg_daily` (CONTRACT.md ss3) carries a simulation_id column to filter by.
     as_of_date = as_of_date or latest_agg_date(session)
-    vehicle_ids = [r[0] for r in session.execute(text("SELECT vehicle_id FROM vehicles")).fetchall()]
+    if as_of_date is None:
+        # No agg_daily rows exist at all -- nothing has enough history for a single prediction.
+        # Returning immediately avoids looping over every row in `vehicles` (which can be up to
+        # 100,000, e.g. left over from a SHORT_BURST throughput test) just to call
+        # predict_for_vehicle() on each one and have it return None every time. Found the hard
+        # way during integration: a 100K-row vehicles table with no matching agg_daily data made
+        # this loop run long enough to exceed the API proxy's and nginx's 600s timeout, surfacing
+        # to the dashboard as a hang/error rather than the empty result it actually is.
+        return {"as_of_date": None, "predicted": 0, "skipped_insufficient_history": 0,
+                "risk_counts": {"LOW": 0, "MEDIUM": 0, "HIGH": 0}}
+    # Only consider vehicles that actually have at least one agg_daily row at or before
+    # as_of_date -- not every row in `vehicles`. This is what actually bounds the loop: a stale
+    # or oversized fleet (e.g. a leftover throughput-test population) with no real aggregated
+    # history for most/all of its vehicles no longer turns into a multi-minute scan.
+    vehicle_ids = [r[0] for r in session.execute(
+        text("SELECT DISTINCT vehicle_id FROM agg_daily WHERE date <= :as_of_date"),
+        {"as_of_date": as_of_date},
+    ).fetchall()]
 
     counts = {"LOW": 0, "MEDIUM": 0, "HIGH": 0}
     skipped = 0

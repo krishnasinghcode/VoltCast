@@ -67,22 +67,35 @@ export default function FleetOverview() {
       {s && (
         <>
           <div className="stats-grid">
-            <StatCard label="Vehicles" value={fmt.int(s.vehicle_count)} sub={s.fleet_name ?? "all fleets"} />
+            <StatCard
+              label="Vehicles"
+              info="Total vehicles in the selected fleet (or the whole fleet if 'All fleets' is selected)."
+              value={fmt.int(s.vehicle_count)}
+              sub={s.fleet_name ?? "all fleets"}
+            />
             <StatCard
               label="Average SOH"
+              info="State of Health: the battery's remaining usable capacity vs. when it was new, averaged across the fleet. Lower means more degraded."
               value={fmt.pct(s.avg_soh_pct)}
               sub={`min ${fmt.pct(s.min_soh_pct)}`}
               tone={s.avg_soh_pct !== null && s.avg_soh_pct < 85 ? "warn" : "good"}
             />
-            <StatCard label="Average SOC" value={fmt.pct(s.avg_soc_pct)} sub="latest simulated state" />
+            <StatCard
+              label="Average SOC"
+              info="State of Charge: how full each vehicle's battery currently is, averaged across the fleet. Changes constantly as vehicles drive and charge."
+              value={fmt.pct(s.avg_soc_pct)}
+              sub="latest simulated state"
+            />
             <StatCard
               label="High-risk vehicles"
+              info="Vehicles whose ML-predicted 30-day battery degradation crosses the HIGH threshold. Requires the model to have been trained and run at least once (see the Risk & ML page)."
               value={fmt.int(s.risk_breakdown.HIGH)}
               sub={predicted ? `${((100 * s.risk_breakdown.HIGH) / predicted).toFixed(1)}% of predicted` : "no predictions yet"}
               tone={s.risk_breakdown.HIGH > 0 ? "bad" : undefined}
             />
             <StatCard
               label="Open alerts"
+              info="Real-time rule-based alerts (e.g. high temperature, deep discharge) plus ML-driven high-risk alerts, not yet acknowledged."
               value={fmt.int(s.active_alerts)}
               sub={`${fmt.int(s.critical_alerts)} critical`}
               tone={s.critical_alerts > 0 ? "bad" : s.active_alerts > 0 ? "warn" : "good"}
@@ -90,7 +103,11 @@ export default function FleetOverview() {
           </div>
 
           <div className="grid-2">
-            <Card title="Predicted 30-day risk" actions={<Link to="/risk" className="small">Open risk page →</Link>}>
+            <Card
+              title="Predicted 30-day risk"
+              info="How many vehicles fall into each risk bucket (LOW/MEDIUM/HIGH), based on the ML model's predicted battery degradation over the next 30 days. UNPREDICTED means no prediction has been made for that vehicle yet. Click a bar to see that bucket's vehicle list."
+              actions={<Link to="/risk" className="small">Open risk page →</Link>}
+            >
               {predicted === 0 && (
                 <p className="muted small">
                   No predictions yet — train the model and click <b>Run prediction</b> on the Risk page.
@@ -98,7 +115,10 @@ export default function FleetOverview() {
               )}
               <ChartBars data={riskData} colors={RISK_COLORS} onClick={(n) => n !== "UNPREDICTED" && navigate(`/risk?level=${n}`)} />
             </Card>
-            <Card title="Driving archetypes">
+            <Card
+              title="Driving archetypes"
+              info="How many vehicles were generated with each behavior archetype (HEALTHY/NORMAL/STRESSED/BAD), which biases their simulated charging/driving stress and therefore how fast their battery degrades. Click a bar to filter the vehicle list."
+            >
               <ChartBars data={archData} colors={ARCH_COLORS} onClick={(n) => navigate(`/vehicles?archetype=${n}`)} />
             </Card>
           </div>
@@ -106,7 +126,7 @@ export default function FleetOverview() {
       )}
 
       <div className="grid-2">
-        <Card title="Fleets">
+        <Card title="Fleets" info="Click a row to filter the whole page down to that one fleet instead of all fleets combined.">
           {fleets.loading && <Spinner />}
           <ErrorBanner error={fleets.error} />
           {fleets.data && fleets.data.items.length === 0 && <Empty>No fleets yet — run a simulation first.</Empty>}
@@ -133,7 +153,11 @@ export default function FleetOverview() {
             </div>
           )}
         </Card>
-        <Card title="Latest alerts" actions={<Link to="/alerts" className="small">All alerts →</Link>}>
+        <Card
+          title="Latest alerts"
+          info="Live feed of newly-fired alerts, pushed over the same WebSocket as the fleet summary above. Click a vehicle ID to see its detail page."
+          actions={<Link to="/alerts" className="small">All alerts →</Link>}
+        >
           {live.recentAlerts.length === 0 ? (
             <Empty>{live.status === "open" ? "No alerts yet." : "Waiting for live connection…"}</Empty>
           ) : (

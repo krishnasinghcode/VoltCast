@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import type { Fleet, Page, VehicleListItem } from "../api/types";
-import { Card, Empty, ErrorBanner, fmt, Pager, RiskBadge, Spinner, useCursorPager } from "../components/ui";
+import { Card, Empty, ErrorBanner, fmt, InfoTip, Pager, RiskBadge, Spinner, useCursorPager } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 
 export default function VehicleSearch() {
@@ -100,7 +100,9 @@ export default function VehicleSearch() {
         </form>
       </Card>
 
-      <Card>
+      <Card
+        title={<>Results <InfoTip text="'SOH' is current battery health. 'SOH in 30d' and 'Risk' only show a value once the ML model has made a prediction for that vehicle (Risk & ML page) — until then they show as empty." /></>}
+      >
         <ErrorBanner error={result.error} onRetry={result.reload} />
         {result.loading && !result.data && <Spinner />}
         {result.data && items.length === 0 && <Empty>No vehicles match these filters.</Empty>}

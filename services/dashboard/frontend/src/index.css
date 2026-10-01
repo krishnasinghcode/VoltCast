@@ -115,6 +115,30 @@ nav { display: flex; flex-direction: column; gap: 2px; }
 .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); min-width: 0; }
 .card-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 12px; }
 .card-actions { display: flex; gap: 8px; align-items: center; }
+
+/* ---------- info tooltip ("i" button, hover/focus/tap to reveal) ---------- */
+.info-tip { position: relative; display: inline-flex; margin-left: 6px; vertical-align: middle; }
+.info-tip-btn {
+  width: 16px; height: 16px; border-radius: 50%; border: 1px solid var(--info); background: transparent;
+  color: var(--info); font-size: 11px; font-style: italic; font-weight: 700; line-height: 1;
+  display: inline-flex; align-items: center; justify-content: center; cursor: help; padding: 0;
+}
+.info-tip-btn:hover, .info-tip-btn:focus-visible { background: var(--info); color: var(--surface); outline: none; }
+.info-tip-bubble {
+  position: absolute; left: 50%; bottom: calc(100% + 8px); transform: translateX(-50%) translateY(4px);
+  width: max-content; max-width: 260px; background: var(--text); color: var(--surface);
+  font-size: 12px; font-weight: 400; line-height: 1.4; padding: 8px 10px; border-radius: 6px;
+  box-shadow: var(--shadow); opacity: 0; visibility: hidden; pointer-events: none;
+  transition: opacity 120ms ease, transform 120ms ease; z-index: 50;
+}
+.info-tip-bubble::after {
+  content: ""; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  border: 5px solid transparent; border-top-color: var(--text);
+}
+.info-tip-btn:hover + .info-tip-bubble,
+.info-tip-btn:focus-visible + .info-tip-bubble {
+  opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0);
+}
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
 .stats-grid.compact { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); margin: 12px 0; }
 .stat { padding: 14px 16px; }

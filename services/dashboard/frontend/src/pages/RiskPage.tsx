@@ -3,7 +3,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { api, ApiError, errorMessage } from "../api/client";
 import type { Page, RiskItem, SimulationRow } from "../api/types";
 import { useAuth } from "../auth/AuthContext";
-import { Card, Empty, ErrorBanner, fmt, Pager, RiskBadge, Spinner, useCursorPager } from "../components/ui";
+import { Card, Empty, ErrorBanner, fmt, InfoTip, Pager, RiskBadge, Spinner, useCursorPager } from "../components/ui";
 import { useApi } from "../hooks/useApi";
 
 type Level = "HIGH" | "MEDIUM" | "LOW";
@@ -45,7 +45,7 @@ export default function RiskPage() {
         <p className="muted small">Training and prediction need a fleet manager or admin account.</p>
       )}
 
-      <Card title={<><RiskBadge level={level} /> vehicles</>}>
+      <Card title={<><RiskBadge level={level} /> vehicles <InfoTip text="Each row is one vehicle's latest prediction. 'Degradation' is the model's predicted battery-health loss over the next 30 days; 'SOH in 30d' is current SOH minus that. If this list is empty, no prediction has been run yet for this risk bucket." /></>}>
         <ErrorBanner error={list.error} onRetry={list.reload} />
         {list.loading && !list.data && <Spinner />}
         {list.data && list.data.items.length === 0 && (
@@ -133,7 +133,10 @@ function MlControls({ onDone }: { onDone: () => void }) {
   const s = status.data;
 
   return (
-    <Card title="Model">
+    <Card
+      title="Model"
+      info="Retrain model: builds training features/labels from the selected simulation's aggregated history (needs at least ~2 weeks of simulated days) and fits a new model. Run prediction: scores every vehicle that has any aggregated history against the current model and writes a risk level for each — it does NOT require picking a specific simulation (it covers all vehicles with history), and it can take a while on a large fleet."
+    >
       <div className="ml-row">
         <label className="field inline">
           <span>Simulation</span>
