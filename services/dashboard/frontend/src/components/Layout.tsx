@@ -2,6 +2,13 @@ import { useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useLiveSocket } from "../hooks/useLiveSocket";
+import { useTheme, type ThemeChoice } from "../hooks/useTheme";
+
+const THEMES: { value: ThemeChoice; label: string; icon: string }[] = [
+  { value: "system", label: "System theme", icon: "◐" },
+  { value: "light", label: "Light theme", icon: "☀" },
+  { value: "dark", label: "Dark theme", icon: "☾" },
+];
 
 const NAV = [
   { to: "/", label: "Fleet overview", icon: "▦", end: true },
@@ -16,6 +23,7 @@ const NAV = [
 export default function Layout() {
   const { auth, logout } = useAuth();
   const { status, fleetSummary } = useLiveSocket();
+  const { theme, setTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const openAlerts = fleetSummary?.active_alerts ?? 0;
 
@@ -39,6 +47,22 @@ export default function Layout() {
           ))}
         </nav>
         <div className="sidebar-foot">
+          <div className="theme-switch" role="radiogroup" aria-label="Theme">
+            {THEMES.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                role="radio"
+                aria-checked={theme === t.value}
+                aria-label={t.label}
+                title={t.label}
+                className={theme === t.value ? "active" : ""}
+                onClick={() => setTheme(t.value)}
+              >
+                {t.icon}
+              </button>
+            ))}
+          </div>
           <div className={`live-pill live-${status}`} title="Live updates via /ws/live">
             <span className="dot" /> {status === "open" ? "Live" : status === "connecting" ? "Connecting…" : "Offline"}
           </div>
