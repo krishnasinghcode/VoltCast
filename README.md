@@ -69,6 +69,67 @@ Open the dashboard: **http://localhost:3000**. Demo accounts (auto-seeded on `ap
 | manager@cvi.local | manager123 | FLEET_MANAGER |
 | viewer@cvi.local | viewer123 | VIEWER |
 
+## Running the frontend in dev mode (hot reload, outside Docker)
+
+Useful for frontend-only iteration without rebuilding the Docker image each time:
+
+```bash
+cd services/dashboard/frontend
+npm install
+npm run dev
+```
+
+Opens at `http://localhost:5173` by default (not 3000 — that's the Docker/nginx production build, see
+`frontend/.env.example` for `VITE_API_URL` if you need to point it at a non-default API location). The
+backend (`api`) must already be running via Docker for this to have anything to talk to. `npm run build`
+produces the production bundle nginx serves inside the container; `npm run typecheck` runs TypeScript checks
+only, no build.
+
+## Day-to-day operations
+
+```bash
+# View logs for one service (add -f to follow live)
+docker compose logs ingestion --tail 50
+
+# Stop everything (keeps all data — named volumes persist)
+docker compose stop
+
+# Bring it back up later, same data
+docker compose up -d
+
+# Full teardown INCLUDING all data — only do this deliberately
+docker compose down -v
+
+# Check every container's status (use -a to include stopped/exited ones)
+docker compose ps -a
+
+# Reset just the vehicle/fleet/prediction data (keeps infra running) — needed before building a
+# different-sized fleet, since a larger vehicle_count collides with an existing smaller one (see Known
+# Issues below)
+docker exec -it krishna-postgres-1 psql -U cvi_app -d cvi -c "TRUNCATE simulation_vehicle_state, battery_predictions, alerts, charging_sessions, agg_5min, agg_hourly, agg_daily, simulations, vehicles, batteries, battery_chemistries, vehicle_models, fleets CASCADE;"
+docker exec -it krishna-mongo-1 mongosh cvi_telemetry --eval "db.raw_telemetry.deleteMany({})"
+
+# Backup / restore the whole Postgres database (useful before any destructive operation, or to move data
+# between machines — see test-evidence/SHORT_BURST_100k_throughput_test.md for the full pattern)
+docker compose exec postgres pg_dump -U cvi_app -d cvi -Fc -f /tmp/backup.dump
+docker compose cp postgres:/tmp/backup.dump ./backups/backup.dump
+# ... later, to restore:
+docker compose cp ./backups/backup.dump postgres:/tmp/backup.dump
+docker compose exec postgres pg_restore -U cvi_app -d cvi --clean --if-exists /tmp/backup.dump
+```
+
+## Troubleshooting
+
+| Symptom | Cause | Fix |
+|---|---|---|
+| `failed to connect to the docker API` / any `docker` command errors immediately | Docker Desktop isn't running | Start Docker Desktop, wait for the engine to fully boot (30-60s on a cold start), retry |
+| `UNKNOWN_TOPIC_OR_PART` in ingestion logs on first boot | Kafka topic doesn't exist yet — harmless, auto-creates once data-gen produces the first event (12 partitions, per `KAFKA_NUM_PARTITIONS` in `docker-compose.yml`) | Ignore if it's a fresh boot; if it persists after a simulation has started, check `docker compose ps` for kafka's health |
+| `curl` in PowerShell doesn't accept `-X`/`-d` the way these docs show | Plain `curl` in PowerShell is aliased to `Invoke-WebRequest`, different syntax | Use `curl.exe` explicitly (not bare `curl`) for every command in this README on Windows |
+| `exec: "curl"`/`"kill"`: executable file not found` when running `docker compose exec <service> curl ...` | The slim Python images used here don't include `curl` or a standalone `kill` binary | Hit published ports from the host instead of execing in for `curl`; for `kill`, route through the shell builtin: `docker compose exec <service> sh -c "kill -9 1"` |
+| A simulation request with a bigger `vehicle_count` than before fails/crashes | `build_or_load_fleet()` can't grow an existing fleet — new vehicle IDs collide with ones that already exist | Truncate the fleet tables first (see Day-to-day operations above), then create the larger fleet fresh |
+| `docker kill <container>` doesn't bring the container back despite `restart: unless-stopped` | Correct, documented Docker behavior — an externally-issued kill/stop is treated as a deliberate operator action, not a crash, so the policy intentionally does not auto-restart it | To test genuine crash-recovery, kill the process *inside* the container instead: `docker compose exec <service> sh -c "kill -9 1"` — this DOES trigger auto-restart (verified, see `test-evidence/chaos_demo.ps1`) |
+| A service's tests fail with `No module named pytest` or similar | Test files aren't baked into the runtime Docker image (by design, matches CI) | Use the copy-in pattern from "Running tests" above — don't expect `pytest` to already be inside a freshly-pulled container without that step |
+
 ## Environment variables
 
 See [`.env.example`](.env.example) for the full list with defaults — every value has a safe local-dev
@@ -105,6 +166,9 @@ generates a timestamped report). 100K-vehicle throughput test runbook:
   ADR-5); see `docs/STRIDE_threat_model.md` for the full declared gap list.
 - **No vector database** — not needed for this MVP's core decision; see ADR-2.
 - **Single-tenant** — no per-tenant row-level isolation in this MVP.
+- **No frontend tests** — the React app has zero automated tests (no test files, no test script in
+  `package.json`); only the four backend services have real test coverage (90 tests total). A declared gap,
+  not an oversight.
 - **`build_or_load_fleet()` can't grow an existing fleet** — requesting a larger `vehicle_count` than what's
   already persisted collides on vehicle IDs; the fleet tables must be truncated first (documented in
   `docs/dataGenMaster.md`).
