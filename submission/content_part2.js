@@ -21,7 +21,7 @@ const s4 = [
       ["F-13", "Chaos-tested self-healing (Docker restart policy + Kafka replay)", "Should", "Done", "docker-compose.yml, test-evidence/chaos_demo.ps1"],
       ["F-14", "Automated test suites (90 tests across 4 services)", "Must", "Done", "services/*/tests/"],
       ["F-15", "k6-load-tested API (p95/p99 well under target)", "Should", "Done", "infra/k6/burst_load_test.js"],
-      ["F-16", "100K-vehicle ingest throughput proof (SHORT_BURST)", "Should", "Planned", "test-evidence/SHORT_BURST_100k_throughput_test.md"],
+      ["F-16", "100K-vehicle ingest throughput proof (SHORT_BURST)", "Should", "Done (real result below target)", "test-evidence/SHORT_BURST_100k_throughput_results_20261001.md"],
       ["F-17", "Query optimization evidence (EXPLAIN ANALYZE before/after)", "Should", "Planned", "TBD"],
     ],
     [900, 4200, 1000, 1200, 2050]
@@ -72,8 +72,8 @@ const s5 = [
     [1700, 3550, 2100, 2000]
   ),
   H3("Capacity and partitioning"),
-  P("Kafka topic telemetry.raw: 12 partitions, keyed by vehicle_id, so one vehicle's events are always ordered on one partition while the fleet is spread evenly across partitions (avoiding hotspots). Measured real-world throughput during a chaos-demo run: 50 active vehicles produced/consumed roughly 260 events/sec sustained. A dedicated 100,000-vehicle SHORT_BURST throughput test is specified and ready to run (test-evidence/SHORT_BURST_100k_throughput_test.md) to produce the headline NFR number at full scale."),
-  pending("the 100K-vehicle SHORT_BURST throughput number, and the EXPLAIN ANALYZE before/after query-optimization evidence — both have ready runbooks (TODO.md) but were not yet executed at the time this document was drafted."),
+  P("Kafka topic telemetry.raw: 12 partitions, keyed by vehicle_id, so one vehicle's events are always ordered on one partition while the fleet is spread evenly across partitions (avoiding hotspots). A dedicated 100,000-vehicle SHORT_BURST throughput test was run against this (test-evidence/SHORT_BURST_100k_throughput_results_20261001.md): measured production throughput ~17,856 events/sec, but measured ingestion (consumption) throughput only ~1,897 events/sec over the same interval, with consumer lag growing by over 1.1 million events during a 68-second measurement window — ingestion is not keeping up with production at this scale on this hardware. This is reported honestly as the real, measured ceiling rather than adjusted or omitted; see §7 and §12 for what this means and the stated path to closing the gap (horizontal consumer parallelism across the 12 already-provisioned partitions)."),
+  pending("the EXPLAIN ANALYZE before/after query-optimization evidence — a ready runbook exists (TODO.md, test-evidence/EXPLAIN_ANALYZE_query_optimization.md) but was not yet executed at the time this document was drafted."),
   H2("5.4 Deployment View"),
   P("Single Docker Compose stack, nine containers (kafka, postgres, mongo, redis, data-gen, ingestion, ml, api, frontend) on one Docker network, with named volumes for the three datastores so data survives container restarts. Every service reads all configuration from environment variables (CONTRACT.md §7) and contains no cloud-provider-specific SDK calls — meaning the same container images and compose definition (adapted to whichever container orchestrator a target cloud uses — ECS, GKE, AKS, or a self-managed Kubernetes cluster) would run unmodified. This project has not yet been deployed to an actual cloud environment (a declared scope decision given the available time — see §12); the cloud-agnostic property is a design property verified by code inspection (no SDK imports), not yet a live deployment."),
   pageBreak(),

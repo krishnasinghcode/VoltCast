@@ -5,7 +5,7 @@ const s7 = [
   table(
     ["NFR", "Target", "Achieved", "How Measured"],
     [
-      ["Ingest Throughput", "100,000+ events/sec", "PENDING — runbook ready, not yet executed", "test-evidence/SHORT_BURST_100k_throughput_test.md (100K-vehicle SHORT_BURST mode, measured via ingestion's /metrics events_consumed_total delta over time)"],
+      ["Ingest Throughput", "100,000+ events/sec", "NOT MET — production ~17,856 events/sec, but ingestion consumption only ~1,897 events/sec, with consumer lag growing throughout the measured window (not stabilizing)", "A real 100,000-vehicle SHORT_BURST run, two snapshots 67.861s apart via ingestion's /metrics counters. test-evidence/SHORT_BURST_100k_throughput_results_20261001.md"],
       ["End-to-End Latency", "< 2s dashboard; < 5s critical alert", "Real-time alerts fire inline during ingestion, same event (sub-second rule evaluation); dashboard live-state push interval is 2s (WS_PUSH_INTERVAL_SECONDS) — not independently measured end-to-end under load", "Configuration value (push interval) + code inspection of alert_rules.py's inline evaluation; not a dedicated latency measurement"],
       ["API Latency", "p95 < 200 ms; p99 < 500 ms", "ACHIEVED — p95 = 60.84 ms; p99 = 93.4 ms", "k6, 200 concurrent VUs, 30s ramp/60s hold/15s down, 16,203 requests, 100% success. test-evidence/k6_load_test_results.md"],
       ["Resilience", "Recovers after broker / pod failure", "ACHIEVED — internal process crash recovered automatically in 5.9s with zero data loss", "test-evidence/chaos_demo.ps1 + generated report; see §6.4 and §9"],
@@ -13,6 +13,8 @@ const s7 = [
     ],
     [1550, 2400, 3050, 2350]
   ),
+  H3("Why ingest throughput fell short, and what closes the gap"),
+  P("The single-broker, single-threaded-consumer design (ADR-3) was always a declared trade-off for build speed over the time budget, not a claim that it would hit enterprise-scale throughput unmodified. The measured ~1,897 events/sec ceiling is consistent with that design: ingestion's consume loop does per-event CPU work (JSON parse, validation, dedup check, aggregation under a lock) on a single Python thread, which structurally cannot approach 100,000 events/sec no matter how much the I/O side is optimized (and the I/O side already was optimized once during this project — an earlier unbatched Mongo/Redis pattern capped throughput around 400 events/sec until it was fixed). The real, available path to closing this gap — not yet implemented, but requiring no schema change — is horizontal consumer parallelism: running multiple ingestion instances, each consuming a disjoint subset of the 12 Kafka partitions already provisioned. This is reported as a finding and a next step (§12), not smoothed over."),
   H3("Load test setup and results"),
   P("Tool: k6 (Grafana), run via the official Docker image sharing the api container's network namespace. Scenario: ramping-VUs executor, 0 -> 200 VUs over 30s, hold 200 VUs for 60s, ramp down over 15s. Traffic mix weighted toward realistic dashboard usage: vehicle detail (35%), vehicle search (25%), fleet summary (20%), alerts list (20%). Rate limiting was temporarily raised for the duration of this specific test (to measure true latency headroom rather than 429 throttling) and restored to its normal default immediately afterward."),
   table(
@@ -64,7 +66,7 @@ const s9 = [
       ["Unit", "pytest", "90 (data-gen 8, ingestion 24, ml 11, api 47)", "100% passing; line/branch coverage not separately measured (coverage.py not run) — declared gap", "Yes (.github/workflows/ci.yml runs all four suites + a frontend build on every push)"],
       ["Integration & contract", "pytest with an in-memory SQLite fixture DB + fakeredis (api); real-logic tests against the actual aggregator/segmenter code (ingestion)", "Included within the above 90 (e.g. test_detail_falls_back_to_postgres, windowed-aggregator flush tests)", "Passing. Declared simplification: not full Testcontainers-based cross-service integration tests against real Postgres/Kafka in CI", "Yes, same CI run"],
       ["Acceptance (BDD)", "Not implemented (no Cucumber/behave)", "0", "Declared gap given the time budget; the Feature List (§4) user stories serve as informal acceptance criteria instead", "No"],
-      ["Performance / Load", "k6 (Docker)", "1 scenario, 16,203 requests", "PASSED both thresholds: p95 60.84ms (<200ms), p99 93.4ms (<500ms); consumer-throughput SHORT_BURST test pending (§7)", "No (run manually, not wired into CI)"],
+      ["Performance / Load", "k6 (Docker) + a real 100K-vehicle SHORT_BURST run", "1 k6 scenario (16,203 requests) + 1 throughput run", "API latency PASSED both thresholds: p95 60.84ms (<200ms), p99 93.4ms (<500ms). Ingest throughput NOT MET: ~1,897 events/sec measured vs. 100,000 target (§7) — a real result, not a pending item", "No (run manually, not wired into CI)"],
       ["Security (SAST/DAST/dependency scan)", "Not run (no Semgrep, OWASP ZAP, or Trivy scan performed)", "0", "Declared gap; the SQL sandbox's defense-in-depth design (§8) is the strongest concrete security evidence available instead of a scan report", "No"],
       ["Compliance & Chaos", "Custom PowerShell chaos script (test-evidence/chaos_demo.ps1)", "1 full run, automated and reproducible", "PASSED — internal crash recovered in 5.9s, zero data loss, consumer lag draining", "No (run manually)"],
     ],
