@@ -45,6 +45,20 @@ def create_simulation(config: SimulationConfig):
             "active_vehicle_count must be <= vehicle_count",
         )
 
+    with db.session() as conn:
+        existing_count = db.count_vehicles(conn)
+    if config.mode == SimulationMode.DEMO and 0 < existing_count < config.vehicle_count:
+        config.vehicle_count = existing_count
+        if config.active_vehicle_count > existing_count:
+            config.active_vehicle_count = existing_count
+    if 0 < existing_count < config.vehicle_count:
+        return error_response(
+            400, "VALIDATION_ERROR",
+            f"vehicle_count ({config.vehicle_count}) exceeds the {existing_count} vehicles already "
+            "in the database — truncate the fleet tables first, or use vehicle_count <= "
+            f"{existing_count}.",
+        )
+
     statics = fleet.build_or_load_fleet(
         config.vehicle_count, config.seed, config.archetype_distribution, config.start_time
     )

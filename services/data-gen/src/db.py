@@ -10,7 +10,7 @@ from contextlib import contextmanager
 from datetime import date, datetime
 from typing import Iterable, Optional
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import bindparam, create_engine, text
 from sqlalchemy.engine import Engine
 
 from src.config import DATABASE_URL
@@ -130,6 +130,10 @@ def fleet_population_exists(vehicle_count: int) -> bool:
         return (result or 0) >= vehicle_count
 
 
+def count_vehicles(conn) -> int:
+    return conn.execute(text("SELECT COUNT(*) FROM vehicles")).scalar() or 0
+
+
 def insert_fleets(conn, fleets: list[dict]) -> None:
     conn.execute(
         text("INSERT INTO fleets (fleet_id, name, region) VALUES (:fleet_id, :name, :region)"),
@@ -155,6 +159,19 @@ def insert_battery_chemistries(conn, chemistries: list[dict]) -> None:
         ),
         chemistries,
     )
+
+
+def get_chemistry_ids_by_name(conn, names: list[str]) -> dict[str, str]:
+    """Names are globally unique (ON CONFLICT DO NOTHING on insert), so a chemistry already
+    present from an earlier fleet build keeps its original id -- callers must read the real,
+    committed id back rather than reuse the uuid they generated for the insert attempt."""
+    rows = conn.execute(
+        text("SELECT chemistry_id, name FROM battery_chemistries WHERE name IN :names").bindparams(
+            bindparam("names", expanding=True)
+        ),
+        {"names": names},
+    ).all()
+    return {row.name: str(row.chemistry_id) for row in rows}
 
 
 def insert_batteries(conn, batteries: list[dict]) -> None:

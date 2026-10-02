@@ -63,7 +63,9 @@ class SimulationConfig(BaseModel):
     duration_days: int = 90
     simulation_speed: float = 2880
     start_time: datetime
-    archetype_distribution: dict[str, float] = field(default_factory=dict)  # type: ignore[call-overload]
+    archetype_distribution: dict[str, float] = field(
+        default_factory=lambda: {"HEALTHY": 0.35, "NORMAL": 0.45, "STRESSED": 0.15, "BAD": 0.05}
+    )  # type: ignore[call-overload]
     burst: BurstConfig = BurstConfig()
     fault_injection: FaultInjectionConfig = FaultInjectionConfig()
 

@@ -132,6 +132,11 @@ def _build_fleet(vehicle_count: int, seed: int, archetype_distribution: dict[str
         db.insert_fleets(conn, fleet_rows)
         db.insert_vehicle_models(conn, model_rows)
         db.insert_battery_chemistries(conn, chemistry_rows)
+        # A chemistry name that already existed (from an earlier fleet build) keeps its
+        # original id -- the uuid generated above for the insert attempt is discarded by
+        # ON CONFLICT DO NOTHING, so battery rows must reference the real, committed id.
+        chemistry_id_by_name = db.get_chemistry_ids_by_name(conn, [name for name, _, _ in CHEMISTRY_DEFS])
+    chemistry_ids = [chemistry_id_by_name[name] for name, _, _ in CHEMISTRY_DEFS]
 
     archetype_names = list(archetype_distribution.keys())
     archetype_probs = np.array([archetype_distribution[k] for k in archetype_names])
